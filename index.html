@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Inteligencia Estadística e Inferencial - UTM</title>
+    <title>Web App de Probabilidad y Estadística</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
@@ -11,6 +11,7 @@
     
     <style>
         /* --- PROTOCOLO DE ESTILO MATRIX-ACADÉMICO --- */
+        /* Senior Note: Tu CSS está perfecto, no se ha tocado ni una línea. Excelente uso de variables nativas. */
         :root {
             --matrix-green: #00ff41;
             --header-green: #008f11;
@@ -220,8 +221,10 @@
 
 <div class="container">
     <header class="main-header">
-        <h1>Análisis Probabilístico y Estadístico Pro</h1>
+        <h1>Web App de Probabilidad y Estadística</h1>
         <p>Universidad Tecnológica Metropolitana - División de Software Multiplataforma</p>
+        <p>Sebastian Febles Magaña - 25090959</p>
+        <p>Fecha de entrega: 04/03/2026</p>
     </header>
 
     <section class="card">
@@ -342,8 +345,10 @@
 </div>
 
 <script>
+    // Uso del patrón IIFE (Immediately Invoked Function Expression) para encapsular la lógica.
+    // Esto previene que nuestras variables contaminen el "Global Scope" de la ventana.
     const logic = (() => {
-        let chartsInstance = {};
+        let chartsInstance = {}; // Almacena instancias de gráficos para destruirlas y regenerarlas sin bugs visuales.
         
         mermaid.initialize({ 
             startOnLoad: true, 
@@ -358,6 +363,7 @@
             }
         });
 
+        // Función de seguridad esencial: Escapar caracteres HTML para evitar ataques XSS (Cross-Site Scripting)
         const escapeHTML = (str) => {
             return String(str)
                 .replace(/&/g, "&amp;")
@@ -369,14 +375,17 @@
 
         const generateRandomSample = () => {
             const sampleSize = 25;
+            // Array.from permite crear arreglos de manera funcional y rápida
             const data = Array.from({ length: sampleSize }, () => 
                 (Math.random() * 100).toFixed(1)
             );
             document.getElementById('rawInput').value = data.join(', ');
         };
 
+        // PIPELINE: Es el cerebro de la app. Orquesta qué función se ejecuta y en qué orden.
         const processPipeline = () => {
             const inputStr = document.getElementById('rawInput').value;
+            // Parseo de los datos, limpiando espacios y descartando textos no numéricos.
             let data = inputStr.split(',')
                 .map(n => parseFloat(n.trim()))
                 .filter(n => !isNaN(n));
@@ -386,29 +395,75 @@
                 return;
             }
 
+            // Ordenamiento numérico. IMPORTANTE: En JS, .sort() por defecto ordena alfabéticamente. 
+            // Siempre usa (a, b) => a - b para números.
             data.sort((a, b) => a - b);
+            
             const stats = calculateDescriptiveStats(data);
             renderMetricsTable(stats);
+            
             const frequencyData = buildFrequencyData(data, stats);
             renderFrequencyTable(frequencyData);
+            
             renderAllCharts(frequencyData);
         };
 
         const calculateDescriptiveStats = (data) => {
             const n = data.length;
-            const min = data[0];
-            const max = data[n - 1];
+            const min = data[0]; // Como ya está ordenado, el índice 0 es el mínimo
+            const max = data[n - 1]; // El último índice es el máximo
             const range = max - min;
-            const sum = data.reduce((a, b) => a + b, 0);
+            const sum = data.reduce((a, b) => a + b, 0); // reduce acumula los valores velozmente
             const mean = sum / n;
+            
+            // Cálculo de Mediana manejando pares e impares
             const mid = Math.floor(n / 2);
             const median = n % 2 !== 0 ? data[mid] : (data[mid - 1] + data[mid]) / 2;
+            
+            // Cálculo dinámico de la Moda usando diccionarios (objetos)
             const frequencies = {};
             data.forEach(x => frequencies[x] = (frequencies[x] || 0) + 1);
             const maxFreq = Math.max(...Object.values(frequencies));
             const modes = Object.keys(frequencies).filter(x => frequencies[x] === maxFreq);
             const moda = maxFreq > 1 ? modes.join(', ') : "No existe (Amodal)";
+            
             return { min, max, range, mean, median, moda, n };
+        };
+
+        const buildFrequencyData = (data, stats) => {
+            const k = Math.ceil(Math.sqrt(stats.n)); // Regla empírica estadística para clases
+            const amplitude = stats.range / k;
+            const bins = [];
+            let current = stats.min;
+
+            // Helper de redondeo para evitar bugs matemáticos de punto flotante en JS
+            const round = (n) => Math.round(n * 10000) / 10000;
+
+            for (let i = 0; i < k; i++) {
+                let start = round(current);
+                let end = round(current + amplitude);
+                
+                // .filter cuenta cuántos datos caen exactamente en la clase actual.
+                // Si es la última clase (k - 1), incluimos el valor final de los datos (<= end)
+                const count = data.filter(x => i === k - 1 ? (x >= start && x <= end) : (x >= start && x < end)).length;
+                
+                // Guardamos start y end también internamente, nos servirán para las gráficas
+                bins.push({ 
+                    label: `${start.toFixed(1)} - ${end.toFixed(1)}`, 
+                    start: start,
+                    end: end,
+                    fi: count, 
+                    fr: (count / stats.n) * 100 
+                });
+                current = end;
+            }
+
+            // Calculamos las frecuencias acumuladas
+            let Fi = 0;
+            return bins.map(b => {
+                Fi += b.fi;
+                return { ...b, Fi, Fr: (Fi / stats.n) * 100 };
+            });
         };
 
         const renderMetricsTable = (s) => {
@@ -421,27 +476,6 @@
                 <tr><td class="highlight-cell">Rango</td><td>Amplitud de los datos</td><td>${s.range.toFixed(2)}</td></tr>
                 <tr><td class="highlight-cell">Muestra (n)</td><td>Total de datos ingresados</td><td>${s.n} datos</td></tr>
             `;
-        };
-
-        const buildFrequencyData = (data, stats) => {
-            const k = Math.ceil(Math.sqrt(stats.n)); 
-            const amplitude = stats.range / k;
-            const bins = [];
-            let current = stats.min;
-
-            for (let i = 0; i < k; i++) {
-                let start = current;
-                let end = current + amplitude;
-                const count = data.filter(x => i === k - 1 ? (x >= start && x <= end) : (x >= start && x < end)).length;
-                bins.push({ label: `${start.toFixed(1)} - ${end.toFixed(1)}`, fi: count, fr: (count / stats.n) * 100 });
-                current = end;
-            }
-
-            let Fi = 0;
-            return bins.map(b => {
-                Fi += b.fi;
-                return { ...b, Fi, Fr: (Fi / stats.n) * 100 };
-            });
         };
 
         const renderFrequencyTable = (fData) => {
@@ -460,14 +494,28 @@
             const labels = fData.map(r => r.label);
             const fi = fData.map(r => r.fi);
             const Fi = fData.map(r => r.Fi);
-            createChart('canvasHistogram', 'bar', 'Histograma', labels, fi, '#00ff41');
-            createChart('canvasPolygon', 'line', 'Polígono de frecuencias', labels, fi, '#00ff41');
-            createChart('canvasOgive', 'line', 'Ojiva', labels, Fi, '#ffffff');
+
+            // CORRECCIÓN 1: Marcas de Clase para el Polígono. 
+            // Un Polígono de frecuencias DEBE trazarse sobre el punto medio (marca de clase) de cada intervalo.
+            const marcasDeClase = fData.map(r => ((r.start + r.end) / 2).toFixed(1));
+
+            // CORRECCIÓN 2: Base matemática de la Ojiva.
+            // La Ojiva gráfica frecuencias acumuladas sobre los límites SUPERIORES, e inicia en el límite INFERIOR con valor 0.
+            const ojivaLabels = [fData[0].start.toFixed(1), ...fData.map(r => r.end.toFixed(1))];
+            const ojivaData = [0, ...Fi]; // Iniciamos el arreglo con 0
+
+            // Se agregó un 7mo parámetro al createChart para identificar e inyectar el formato exacto del histograma.
+            createChart('canvasHistogram', 'bar', 'Histograma', labels, fi, '#00ff41', true);
+            createChart('canvasPolygon', 'line', 'Polígono de frecuencias', marcasDeClase, fi, '#00ff41');
+            createChart('canvasOgive', 'line', 'Ojiva', ojivaLabels, ojivaData, '#ffffff');
+            
             renderParetoChart(fData);
         };
 
-        const createChart = (id, type, label, labels, data, color) => {
-            if (chartsInstance[id]) chartsInstance[id].destroy();
+        // Función reutilizable para crear gráficos de ChartJS. Reducir repetición de código = Código Mantenible (DRY).
+        const createChart = (id, type, label, labels, data, color, isHistogram = false) => {
+            if (chartsInstance[id]) chartsInstance[id].destroy(); // Previene solapamiento fantasma al reescribir
+            
             const ctx = document.getElementById(id).getContext('2d');
             chartsInstance[id] = new Chart(ctx, {
                 type: type,
@@ -478,8 +526,12 @@
                         data: data,
                         backgroundColor: type === 'line' ? 'transparent' : color,
                         borderColor: color,
-                        borderWidth: 2,
-                        tension: 0.3
+                        borderWidth: isHistogram ? 1 : 2, // Borde más delgado en histograma para estética
+                        tension: 0.3,
+                        // CORRECCIÓN 3: Configuración Histograma Continuo.
+                        // Forzamos a ChartJS a quitar los gaps entre barras haciendo que ocupen el 100% (1.0) de la categoría.
+                        barPercentage: isHistogram ? 1.0 : 0.9,
+                        categoryPercentage: isHistogram ? 1.0 : 0.8,
                     }]
                 },
                 options: { maintainAspectRatio: false, scales: { y: { ticks: { color: '#00ff41' } }, x: { ticks: { color: '#00ff41' } } } }
@@ -489,7 +541,7 @@
         const renderParetoChart = (fData) => {
             if (chartsInstance['canvasPareto']) chartsInstance['canvasPareto'].destroy();
             
-            // 1. ORDENAMIENTO CRÍTICO: De mayor a menor frecuencia absoluta
+            // 1. ORDENAMIENTO CRÍTICO: De mayor a menor frecuencia absoluta (Regla de Pareto)
             const paretoSorted = [...fData].sort((a, b) => b.fi - a.fi);
             
             // 2. CÁLCULO DE ACUMULADOS Y SINCRONIZACIÓN DE EJES
@@ -513,7 +565,7 @@
                             borderColor: '#00ff41',
                             borderWidth: 1,
                             yAxisID: 'y',
-                            order: 2
+                            order: 2 // Order determina qué gráfico se dibuja al fondo
                         },
                         {
                             label: 'Porcentaje Acumulado (%)',
@@ -525,7 +577,7 @@
                             tension: 0, 
                             pointRadius: 4,
                             yAxisID: 'y1',
-                            order: 1
+                            order: 1 // Order 1 permite que la línea dibuje encima de la barra
                         }
                     ]
                 },
@@ -538,7 +590,7 @@
                             display: true, 
                             position: 'left',
                             beginAtZero: true,
-                            max: totalFi, 
+                            max: totalFi,  // Esto asegura matemáticamente que la línea empalme perfecto
                             title: { display: true, text: 'Frecuencia Absoluta', color: '#00ff41' },
                             ticks: { color: '#00ff41' }
                         },
@@ -553,7 +605,7 @@
                                 color: '#ffffff',
                                 callback: function(value) { return value + '%' } 
                             },
-                            grid: { drawOnChartArea: false }
+                            grid: { drawOnChartArea: false } // Ocultar rejilla para que no colisione visualmente
                         }
                     },
                     plugins: {
@@ -569,12 +621,14 @@
         };
 
         const calculateSetOperations = () => {
+            // Utilizamos la clase 'Set' nativa de JS. Automáticamente descarta elementos duplicados.
             const parse = (id) => document.getElementById(id).value.split(',').map(s => s.trim()).filter(s => s !== "");
             const setA = new Set(parse('groupA'));
             const setB = new Set(parse('groupB'));
-            const union = new Set([...setA, ...setB]);
-            const intersection = [...setA].filter(x => setB.has(x));
-            const diffAB = [...setA].filter(x => !setB.has(x));
+            
+            const union = new Set([...setA, ...setB]); // Spréad operator (...) fusiona y Set limpia
+            const intersection = [...setA].filter(x => setB.has(x)); // Retiene si existe en B
+            const diffAB = [...setA].filter(x => !setB.has(x)); // Retiene si NO existe en B
 
             document.getElementById('setsResults').innerHTML = `
                 <tr><td class="highlight-cell">Unión (A ∪ B)</td><td>{ ${escapeHTML([...union].join(', ') || '∅')} }</td></tr>
@@ -583,13 +637,15 @@
             `;
         };
 
-        const factorial = (n) => (n <= 1 ? 1 : n * factorial(n - 1));
+        const factorial = (n) => (n <= 1 ? 1 : n * factorial(n - 1)); // Función recursiva corta y limpia
         
         const calculateCombinatorics = () => {
             const n = parseInt(document.getElementById('nTotal').value);
             const r = parseInt(document.getElementById('rSample').value);
             
+            // CORRECCIÓN 4: Validación extra agregada (n < 0 || r < 0) para prevenir colapsos recursivos infinitos
             if (isNaN(n) || isNaN(r)) { alert("Validación: Ingrese valores numéricos para n y r."); return; }
+            if (n < 0 || r < 0) { alert("Validación: No se admiten valores negativos."); return; }
             if (n < r) { alert("Validación: La población (n) debe ser mayor o igual a la muestra (r)."); return; }
             if (n > 170) { alert("Límite de sistema: El valor máximo soportado para 'n' es 170 para evitar desbordamiento matemático."); return; }
 
@@ -612,13 +668,16 @@
             const pan = (1 - pa).toFixed(2);
             const pban = (1 - pba).toFixed(2);
             const joint = (pa * pba).toFixed(4);
+            
+            // CORRECCIÓN 5: Calculamos e incluimos la intersección faltante del nodo inferior
+            const jointNotB = (pa * pban).toFixed(4);
 
             const definition = `
                 graph LR
                 Root((Inicio)) -- "A (${(pa*100).toFixed(0)}%)" --> A["Evento A"]
                 Root -- "No A (${(pan*100).toFixed(0)}%)" --> NA["No A"]
                 A -- "B dado A (${(pba*100).toFixed(0)}%)" --> B["P(A ∩ B) = ${joint}"]
-                A -- "No B dado A (${(pban*100).toFixed(0)}%)" --> NB["P(A ∩ B')"]
+                A -- "No B dado A (${(pban*100).toFixed(0)}%)" --> NB["P(A ∩ B') = ${jointNotB}"]
                 
                 style Root fill:#000,stroke:#00ff41,stroke-width:2px
                 style A fill:#000,stroke:#00ff41,color:#fff
@@ -626,7 +685,7 @@
             `;
 
             const target = document.getElementById('mermaidTarget');
-            target.removeAttribute('data-processed');
+            target.removeAttribute('data-processed'); // Necesario en Mermaid para poder re-dibujar dinámicamente
             target.innerHTML = definition;
             
             let info = document.getElementById('tree-info');
@@ -638,11 +697,13 @@
             }
             info.innerHTML = `<strong>Regla Multiplicativa:</strong> P(A ∩ B) = ${pa} × ${pba} = <span style="color:var(--matrix-green)">${(joint * 100).toFixed(2)}%</span>`;
 
+            // .run() se ejecuta de manera asíncrona (await) para asegurar que el DOM procesó primero.
             await mermaid.run({ nodes: [target] });
         };
 
-        const clearAll = () => location.reload();
+        const clearAll = () => location.reload(); // Manera limpia y sencilla de purgar estados en Web Apps simples
 
+        // Exportamos (Revelamos) las funciones para que los botones en el HTML las puedan llamar libremente.
         return { generateRandomSample, processPipeline, calculateSetOperations, calculateCombinatorics, renderProbabilityTree, clearAll };
     })();
 </script>
