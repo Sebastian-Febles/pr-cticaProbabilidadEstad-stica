@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web App de Probabilidad y Estadística</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- PROTOCOLO DE ESTILO MATRIX-ACADÉMICO --- */
+        /* Senior Note: Tu CSS está perfecto, no se ha tocado ni una línea. Excelente uso de variables nativas. */
+        :root {
+            --matrix-green: #00ff41;
+            --header-green: #008f11;
+            --dark-green: #003b00;
+            --bg-black: #0a0a0a;
+            --card-bg: rgba(15, 15, 15, 0.98);
+            --text-gray: #b0b0b0;
+            --font-main: 'Share Tech Mono', monospace;
+            --data-white: #ffffff;
+            --border-glow: 0 0 10px rgba(0, 255, 65, 0.2);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-black);
+            color: var(--matrix-green);
+            font-family: var(--font-main);
+            margin: 0;
+            padding: 30px;
+            line-height: 1.5;
+            background-image: radial-gradient(circle at center, #051a05 0%, #0a0a0a 100%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .main-header {
+            text-align: center;
+            border-bottom: 3px double var(--matrix-green);
+            padding-bottom: 20px;
+            margin-bottom: 10px;
+        }
+
+        .main-header h1 {
+            font-size: 2.5rem;
+            color: white;
+            text-transform: uppercase;
+            margin: 0;
+            letter-spacing: 4px;
+            text-shadow: 2px 2px 5px var(--dark-green);
+        }
+
+        .main-header p {
+            color: var(--matrix-green);
+            opacity: 0.8;
+            font-size: 1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 25px;
+            border: 1px solid var(--matrix-green);
+            border-radius: 4px;
+            box-shadow: var(--border-glow);
+            transition: transform 0.2s ease;
+        }
+
+        h2 {
+            color: var(--matrix-green);
+            font-size: 1.2rem;
+            margin-top: 0;
+            border-left: 5px solid var(--header-green);
+            padding-left: 15px;
+            text-transform: uppercase;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        textarea, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            background: #000;
+            color: var(--matrix-green);
+            border: 1px solid var(--dark-green);
+            font-family: var(--font-main);
+            font-size: 1rem;
+            outline: none;
+            border-radius: 4px;
+        }
+
+        textarea:focus, input:focus {
+            border-color: var(--matrix-green);
+            box-shadow: 0 0 5px var(--matrix-green);
+        }
+
+        .button-bar {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: var(--dark-green);
+            color: var(--matrix-green);
+            border: 1px solid var(--matrix-green);
+            padding: 12px 25px;
+            cursor: pointer;
+            font-family: var(--font-main);
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        button:hover {
+            background: var(--matrix-green);
+            color: #000;
+            box-shadow: 0 0 15px var(--matrix-green);
+        }
+
+        .table-container {
+            margin-top: 20px;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid var(--matrix-green);
+        }
+
+        .table-header-title {
+            background: var(--header-green);
+            color: white;
+            padding: 12px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 1rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--matrix-green);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #000;
+            color: var(--data-white);
+        }
+
+        th {
+            background: #111;
+            color: var(--matrix-green);
+            padding: 15px;
+            font-size: 0.85rem;
+            border-bottom: 2px solid var(--dark-green);
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #1a1a1a;
+            font-size: 0.95rem;
+        }
+
+        tr:nth-child(even) { background: #080808; }
+        tr:hover { background: #151515; }
+
+        .highlight-cell {
+            color: var(--matrix-green);
+            font-weight: bold;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 25px;
+        }
+
+        .chart-box {
+            background: #000;
+            border: 1px solid var(--dark-green);
+            height: 400px;
+            padding: 20px;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        #tree-display {
+            background: #000 !important;
+            border: 1px solid var(--dark-green);
+            padding: 20px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .mermaid { background: transparent !important; width: 100%; text-align: center;}
+
+        @media (max-width: 768px) {
+            .grid-layout { grid-template-columns: 1fr; }
+            body { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header class="main-header">
+        <h1>Web App de Probabilidad y Estadística</h1>
+        <p>Universidad Tecnológica Metropolitana - División de Software Multiplataforma</p>
+        <p>Sebastian Febles Magaña - 25090959</p>
+        <p>Fecha de entrega: 04/03/2026</p>
+    </header>
+
+    <section class="card">
+        <h2>Ingreso manual de datos numéricos y Generación de datos aleatorios</h2>
+        <div class="input-group">
+            <p style="color: var(--text-gray)">Ingrese un conjunto de datos numéricos separados por comas (mínimo 20 datos) para iniciar el procesamiento estadístico.</p>
+            <textarea id="rawInput" rows="4" placeholder="Ejemplo: 45.5, 67, 89.2, 34, 55, 67, 88..."></textarea>
+        </div>
+        <div class="button-bar">
+            <button onclick="logic.generateRandomSample()">Generar datos aleatorios (25 datos)</button>
+            <button onclick="logic.processPipeline()" style="border-width: 2px;">Ejecutar Análisis</button>
+            <button onclick="logic.clearAll()" style="background: #300; border-color: #f00; color: #f00;">Limpiar Sistema</button>
+        </div>
+    </section>
+
+    <div class="grid-layout">
+        <section class="card">
+            <h2>Cálculo de media, mediana, moda, mínimo, máximo y rango en base a los datos</h2>
+            <div class="table-container">
+                <div class="table-header-title">Resumen de Parámetros Estadísticos</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parámetro Técnico</th>
+                            <th>Descripción Académica</th>
+                            <th>Valor Calculado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="metricsBody">
+                        <tr><td colspan="3" style="color: #666">Esperando flujo de datos...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Tabla de frecuencias (fi, fr, Fi, Fr)</h2>
+            <div class="table-container" style="max-height: 450px; overflow-y: auto;">
+                <div class="table-header-title">Distribución por Intervalos</div>
+                <table id="frequencyTable">
+                    <thead>
+                        <tr>
+                            <th>Límites de Clase</th>
+                            <th>Absoluta (fi)</th>
+                            <th>Relativa (fr)</th>
+                            <th>Acumulada (Fi)</th>
+                            <th>Relativa Acum. (Fr)</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <section class="card">
+        <h2>Histograma, Polígono de frecuencias, Ojiva y Diagrama de Pareto</h2>
+        <div class="grid-layout">
+            <div class="chart-box"><canvas id="canvasHistogram"></canvas></div>
+            <div class="chart-box"><canvas id="canvasPolygon"></canvas></div>
+            <div class="chart-box"><canvas id="canvasOgive"></canvas></div>
+            <div class="chart-box"><canvas id="canvasPareto"></canvas></div>
+        </div>
+    </section>
+
+    <div class="grid-layout">
+        <section class="card">
+            <h2>Operaciones con conjuntos y Probabilidad</h2>
+            <div class="input-group">
+                <input type="text" id="groupA" placeholder="Elementos Conjunto A (ej: 1, 2, 3)">
+                <input type="text" id="groupB" placeholder="Elementos Conjunto B (ej: 3, 4, 5)">
+                <button onclick="logic.calculateSetOperations()">Analizar Relaciones de Conjuntos</button>
+            </div>
+            <div class="table-container">
+                <div class="table-header-title">Resultados de Lógica de Conjuntos</div>
+                <table>
+                    <tbody id="setsResults"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Permutaciones y combinaciones</h2>
+            <div class="input-group" style="flex-direction: row;">
+                <input type="number" id="nTotal" placeholder="Población (n)" min="0" max="170">
+                <input type="number" id="rSample" placeholder="Muestra (r)" min="0">
+            </div>
+            <button onclick="logic.calculateCombinatorics()" style="width: 100%;">Computar Análisis</button>
+            <div class="table-container">
+                <div class="table-header-title">Conteo de Posibilidades</div>
+                <table>
+                    <tbody id="combinatoricsResults"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <section class="card">
+        <h2>Regla multiplicativa y diagrama de árbol</h2>
+        <div class="input-group" style="flex-direction: row; align-items: center; gap: 20px;">
+            <div style="flex: 1;">
+                <label>P(A) [0-1]:</label>
+                <input type="number" id="probA" step="0.01" value="0.5" min="0" max="1">
+            </div>
+            <div style="flex: 1;">
+                <label>P(B|A) [0-1]:</label>
+                <input type="number" id="probB" step="0.01" value="0.7" min="0" max="1">
+            </div>
+            <button onclick="logic.renderProbabilityTree()" style="margin-top: 25px;">Generar Diagrama de Árbol</button>
+        </div>
+        <div id="tree-display">
+            <div id="mermaidTarget" class="mermaid">
+                graph LR
+                S((Inicio)) --> E["Defina Probabilidades para Gráficar"]
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    // Uso del patrón IIFE (Immediately Invoked Function Expression) para encapsular la lógica.
+    // Esto previene que nuestras variables contaminen el "Global Scope" de la ventana.
+    const logic = (() => {
+        let chartsInstance = {}; // Almacena instancias de gráficos para destruirlas y regenerarlas sin bugs visuales.
+        
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'dark',
+            securityLevel: 'loose',
+            themeVariables: {
+                lineColor: '#00ff41',
+                primaryColor: '#000',
+                nodeBorder: '#00ff41',
+                mainBkg: '#000',
+                textColor: '#00ff41'
+            }
+        });
+
+        // Función de seguridad esencial: Escapar caracteres HTML para evitar ataques XSS (Cross-Site Scripting)
+        const escapeHTML = (str) => {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        };
+
+        const generateRandomSample = () => {
+            const sampleSize = 25;
+            // Array.from permite crear arreglos de manera funcional y rápida
+            const data = Array.from({ length: sampleSize }, () => 
+                (Math.random() * 100).toFixed(1)
+            );
+            document.getElementById('rawInput').value = data.join(', ');
+        };
+
+        // PIPELINE: Es el cerebro de la app. Orquesta qué función se ejecuta y en qué orden.
+        const processPipeline = () => {
+            const inputStr = document.getElementById('rawInput').value;
+            // Parseo de los datos, limpiando espacios y descartando textos no numéricos.
+            let data = inputStr.split(',')
+                .map(n => parseFloat(n.trim()))
+                .filter(n => !isNaN(n));
+
+            if (data.length < 20) {
+                alert("Validación de Sistema: Se requiere un ingreso mínimo de 20 datos.");
+                return;
+            }
+
+            // Ordenamiento numérico. IMPORTANTE: En JS, .sort() por defecto ordena alfabéticamente. 
+            // Siempre usa (a, b) => a - b para números.
+            data.sort((a, b) => a - b);
+            
+            const stats = calculateDescriptiveStats(data);
+            renderMetricsTable(stats);
+            
+            const frequencyData = buildFrequencyData(data, stats);
+            renderFrequencyTable(frequencyData);
+            
+            renderAllCharts(frequencyData);
+        };
+
+        const calculateDescriptiveStats = (data) => {
+            const n = data.length;
+            const min = data[0]; // Como ya está ordenado, el índice 0 es el mínimo
+            const max = data[n - 1]; // El último índice es el máximo
+            const range = max - min;
+            const sum = data.reduce((a, b) => a + b, 0); // reduce acumula los valores velozmente
+            const mean = sum / n;
+            
+            // Cálculo de Mediana manejando pares e impares
+            const mid = Math.floor(n / 2);
+            const median = n % 2 !== 0 ? data[mid] : (data[mid - 1] + data[mid]) / 2;
+            
+            // Cálculo dinámico de la Moda usando diccionarios (objetos)
+            const frequencies = {};
+            data.forEach(x => frequencies[x] = (frequencies[x] || 0) + 1);
+            const maxFreq = Math.max(...Object.values(frequencies));
+            const modes = Object.keys(frequencies).filter(x => frequencies[x] === maxFreq);
+            const moda = maxFreq > 1 ? modes.join(', ') : "No existe (Amodal)";
+            
+            return { min, max, range, mean, median, moda, n };
+        };
+
+        const buildFrequencyData = (data, stats) => {
+            const k = Math.ceil(Math.sqrt(stats.n)); // Regla empírica estadística para clases
+            const amplitude = stats.range / k;
+            const bins = [];
+            let current = stats.min;
+
+            // Helper de redondeo para evitar bugs matemáticos de punto flotante en JS
+            const round = (n) => Math.round(n * 10000) / 10000;
+
+            for (let i = 0; i < k; i++) {
+                let start = round(current);
+                let end = round(current + amplitude);
+                
+                // .filter cuenta cuántos datos caen exactamente en la clase actual.
+                // Si es la última clase (k - 1), incluimos el valor final de los datos (<= end)
+                const count = data.filter(x => i === k - 1 ? (x >= start && x <= end) : (x >= start && x < end)).length;
+                
+                // Guardamos start y end también internamente, nos servirán para las gráficas
+                bins.push({ 
+                    label: `${start.toFixed(1)} - ${end.toFixed(1)}`, 
+                    start: start,
+                    end: end,
+                    fi: count, 
+                    fr: (count / stats.n) * 100 
+                });
+                current = end;
+            }
+
+            // Calculamos las frecuencias acumuladas
+            let Fi = 0;
+            return bins.map(b => {
+                Fi += b.fi;
+                return { ...b, Fi, Fr: (Fi / stats.n) * 100 };
+            });
+        };
+
+        const renderMetricsTable = (s) => {
+            document.getElementById('metricsBody').innerHTML = `
+                <tr><td class="highlight-cell">Media</td><td>Promedio del conjunto</td><td>${s.mean.toFixed(2)}</td></tr>
+                <tr><td class="highlight-cell">Mediana</td><td>Punto central</td><td>${s.median}</td></tr>
+                <tr><td class="highlight-cell">Moda</td><td>Valor con mayor frecuencia</td><td>${escapeHTML(s.moda)}</td></tr>
+                <tr><td class="highlight-cell">Mínimo</td><td>Límite inferior</td><td>${s.min}</td></tr>
+                <tr><td class="highlight-cell">Máximo</td><td>Límite superior</td><td>${s.max}</td></tr>
+                <tr><td class="highlight-cell">Rango</td><td>Amplitud de los datos</td><td>${s.range.toFixed(2)}</td></tr>
+                <tr><td class="highlight-cell">Muestra (n)</td><td>Total de datos ingresados</td><td>${s.n} datos</td></tr>
+            `;
+        };
+
+        const renderFrequencyTable = (fData) => {
+            document.querySelector('#frequencyTable tbody').innerHTML = fData.map(row => `
+                <tr>
+                    <td class="highlight-cell">${escapeHTML(row.label)}</td>
+                    <td>${row.fi}</td>
+                    <td>${row.fr.toFixed(2)}%</td>
+                    <td>${row.Fi}</td>
+                    <td>${row.Fr.toFixed(2)}%</td>
+                </tr>
+            `).join('');
+        };
+
+        const renderAllCharts = (fData) => {
+            const labels = fData.map(r => r.label);
+            const fi = fData.map(r => r.fi);
+            const Fi = fData.map(r => r.Fi);
+
+            // CORRECCIÓN 1: Marcas de Clase para el Polígono. 
+            // Un Polígono de frecuencias DEBE trazarse sobre el punto medio (marca de clase) de cada intervalo.
+            const marcasDeClase = fData.map(r => ((r.start + r.end) / 2).toFixed(1));
+
+            // CORRECCIÓN 2: Base matemática de la Ojiva.
+            // La Ojiva gráfica frecuencias acumuladas sobre los límites SUPERIORES, e inicia en el límite INFERIOR con valor 0.
+            const ojivaLabels = [fData[0].start.toFixed(1), ...fData.map(r => r.end.toFixed(1))];
+            const ojivaData = [0, ...Fi]; // Iniciamos el arreglo con 0
+
+            // Se agregó un 7mo parámetro al createChart para identificar e inyectar el formato exacto del histograma.
+            createChart('canvasHistogram', 'bar', 'Histograma', labels, fi, '#00ff41', true);
+            createChart('canvasPolygon', 'line', 'Polígono de frecuencias', marcasDeClase, fi, '#00ff41');
+            createChart('canvasOgive', 'line', 'Ojiva', ojivaLabels, ojivaData, '#ffffff');
+            
+            renderParetoChart(fData);
+        };
+
+        // Función reutilizable para crear gráficos de ChartJS. Reducir repetición de código = Código Mantenible (DRY).
+        const createChart = (id, type, label, labels, data, color, isHistogram = false) => {
+            if (chartsInstance[id]) chartsInstance[id].destroy(); // Previene solapamiento fantasma al reescribir
+            
+            const ctx = document.getElementById(id).getContext('2d');
+            chartsInstance[id] = new Chart(ctx, {
+                type: type,
+                data: {
+                    labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        backgroundColor: type === 'line' ? 'transparent' : color,
+                        borderColor: color,
+                        borderWidth: isHistogram ? 1 : 2, // Borde más delgado en histograma para estética
+                        tension: 0.3,
+                        // CORRECCIÓN 3: Configuración Histograma Continuo.
+                        // Forzamos a ChartJS a quitar los gaps entre barras haciendo que ocupen el 100% (1.0) de la categoría.
+                        barPercentage: isHistogram ? 1.0 : 0.9,
+                        categoryPercentage: isHistogram ? 1.0 : 0.8,
+                    }]
+                },
+                options: { maintainAspectRatio: false, scales: { y: { ticks: { color: '#00ff41' } }, x: { ticks: { color: '#00ff41' } } } }
+            });
+        };
+
+        const renderParetoChart = (fData) => {
+            if (chartsInstance['canvasPareto']) chartsInstance['canvasPareto'].destroy();
+            
+            // 1. ORDENAMIENTO CRÍTICO: De mayor a menor frecuencia absoluta (Regla de Pareto)
+            const paretoSorted = [...fData].sort((a, b) => b.fi - a.fi);
+            
+            // 2. CÁLCULO DE ACUMULADOS Y SINCRONIZACIÓN DE EJES
+            let acumulado = 0;
+            const totalFi = paretoSorted.reduce((sum, item) => sum + item.fi, 0);
+            const lineData = paretoSorted.map(item => {
+                acumulado += item.fi;
+                return (acumulado / totalFi) * 100;
+            });
+
+            const ctx = document.getElementById('canvasPareto').getContext('2d');
+            chartsInstance['canvasPareto'] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: paretoSorted.map(r => r.label),
+                    datasets: [
+                        {
+                            label: 'Frecuencia (fi)',
+                            data: paretoSorted.map(r => r.fi),
+                            backgroundColor: '#004d00',
+                            borderColor: '#00ff41',
+                            borderWidth: 1,
+                            yAxisID: 'y',
+                            order: 2 // Order determina qué gráfico se dibuja al fondo
+                        },
+                        {
+                            label: 'Porcentaje Acumulado (%)',
+                            data: lineData,
+                            type: 'line',
+                            borderColor: '#ffffff',
+                            backgroundColor: '#ffffff',
+                            borderWidth: 2,
+                            tension: 0, 
+                            pointRadius: 4,
+                            yAxisID: 'y1',
+                            order: 1 // Order 1 permite que la línea dibuje encima de la barra
+                        }
+                    ]
+                },
+                options: { 
+                    maintainAspectRatio: false,
+                    scales: { 
+                        x: { ticks: { color: '#00ff41' }, grid: { color: '#1a1a1a' } },
+                        y: { 
+                            type: 'linear', 
+                            display: true, 
+                            position: 'left',
+                            beginAtZero: true,
+                            max: totalFi,  // Esto asegura matemáticamente que la línea empalme perfecto
+                            title: { display: true, text: 'Frecuencia Absoluta', color: '#00ff41' },
+                            ticks: { color: '#00ff41' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            min: 0,
+                            max: 100,
+                            title: { display: true, text: 'Acumulado (%)', color: '#ffffff' },
+                            ticks: { 
+                                color: '#ffffff',
+                                callback: function(value) { return value + '%' } 
+                            },
+                            grid: { drawOnChartArea: false } // Ocultar rejilla para que no colisione visualmente
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'DIAGRAMA DE PARETO (ANÁLISIS DE PRIORIDADES)',
+                            color: '#00ff41',
+                            font: { family: "'Share Tech Mono'", size: 14 }
+                        }
+                    }
+                } 
+            });
+        };
+
+        const calculateSetOperations = () => {
+            // Utilizamos la clase 'Set' nativa de JS. Automáticamente descarta elementos duplicados.
+            const parse = (id) => document.getElementById(id).value.split(',').map(s => s.trim()).filter(s => s !== "");
+            const setA = new Set(parse('groupA'));
+            const setB = new Set(parse('groupB'));
+            
+            const union = new Set([...setA, ...setB]); // Spréad operator (...) fusiona y Set limpia
+            const intersection = [...setA].filter(x => setB.has(x)); // Retiene si existe en B
+            const diffAB = [...setA].filter(x => !setB.has(x)); // Retiene si NO existe en B
+
+            document.getElementById('setsResults').innerHTML = `
+                <tr><td class="highlight-cell">Unión (A ∪ B)</td><td>{ ${escapeHTML([...union].join(', ') || '∅')} }</td></tr>
+                <tr><td class="highlight-cell">Intersección (A ∩ B)</td><td>{ ${escapeHTML(intersection.join(', ') || '∅')} }</td></tr>
+                <tr><td class="highlight-cell">Diferencia (A - B)</td><td>{ ${escapeHTML(diffAB.join(', ') || '∅')} }</td></tr>
+            `;
+        };
+
+        const factorial = (n) => (n <= 1 ? 1 : n * factorial(n - 1)); // Función recursiva corta y limpia
+        
+        const calculateCombinatorics = () => {
+            const n = parseInt(document.getElementById('nTotal').value);
+            const r = parseInt(document.getElementById('rSample').value);
+            
+            // CORRECCIÓN 4: Validación extra agregada (n < 0 || r < 0) para prevenir colapsos recursivos infinitos
+            if (isNaN(n) || isNaN(r)) { alert("Validación: Ingrese valores numéricos para n y r."); return; }
+            if (n < 0 || r < 0) { alert("Validación: No se admiten valores negativos."); return; }
+            if (n < r) { alert("Validación: La población (n) debe ser mayor o igual a la muestra (r)."); return; }
+            if (n > 170) { alert("Límite de sistema: El valor máximo soportado para 'n' es 170 para evitar desbordamiento matemático."); return; }
+
+            const p = factorial(n) / factorial(n - r);
+            const c = p / factorial(r);
+            document.getElementById('combinatoricsResults').innerHTML = `
+                <tr><td class="highlight-cell">Permutaciones P(n,r)</td><td>${p.toLocaleString()}</td></tr>
+                <tr><td class="highlight-cell">Combinaciones C(n,r)</td><td>${c.toLocaleString()}</td></tr>
+            `;
+        };
+
+        const renderProbabilityTree = async () => {
+            const pa = parseFloat(document.getElementById('probA').value);
+            const pba = parseFloat(document.getElementById('probB').value);
+            
+            if (isNaN(pa) || isNaN(pba) || pa < 0 || pa > 1 || pba < 0 || pba > 1) {
+                alert("Validación: Las probabilidades deben estar en el rango de 0 a 1."); return;
+            }
+
+            const pan = (1 - pa).toFixed(2);
+            const pban = (1 - pba).toFixed(2);
+            const joint = (pa * pba).toFixed(4);
+            
+            // CORRECCIÓN 5: Calculamos e incluimos la intersección faltante del nodo inferior
+            const jointNotB = (pa * pban).toFixed(4);
+
+            const definition = `
+                graph LR
+                Root((Inicio)) -- "A (${(pa*100).toFixed(0)}%)" --> A["Evento A"]
+                Root -- "No A (${(pan*100).toFixed(0)}%)" --> NA["No A"]
+                A -- "B dado A (${(pba*100).toFixed(0)}%)" --> B["P(A ∩ B) = ${joint}"]
+                A -- "No B dado A (${(pban*100).toFixed(0)}%)" --> NB["P(A ∩ B') = ${jointNotB}"]
+                
+                style Root fill:#000,stroke:#00ff41,stroke-width:2px
+                style A fill:#000,stroke:#00ff41,color:#fff
+                style B fill:#004d00,stroke:#00ff41,color:#fff
+            `;
+
+            const target = document.getElementById('mermaidTarget');
+            target.removeAttribute('data-processed'); // Necesario en Mermaid para poder re-dibujar dinámicamente
+            target.innerHTML = definition;
+            
+            let info = document.getElementById('tree-info');
+            if(!info) {
+                info = document.createElement('div');
+                info.id = 'tree-info';
+                info.style.cssText = 'color: #fff; margin-top: 20px; font-family: "Share Tech Mono";';
+                document.getElementById('tree-display').appendChild(info);
+            }
+            info.innerHTML = `<strong>Regla Multiplicativa:</strong> P(A ∩ B) = ${pa} × ${pba} = <span style="color:var(--matrix-green)">${(joint * 100).toFixed(2)}%</span>`;
+
+            // .run() se ejecuta de manera asíncrona (await) para asegurar que el DOM procesó primero.
+            await mermaid.run({ nodes: [target] });
+        };
+
+        const clearAll = () => location.reload(); // Manera limpia y sencilla de purgar estados en Web Apps simples
+
+        // Exportamos (Revelamos) las funciones para que los botones en el HTML las puedan llamar libremente.
+        return { generateRandomSample, processPipeline, calculateSetOperations, calculateCombinatorics, renderProbabilityTree, clearAll };
+    })();
+</script>
+
+</body>
+</html>
